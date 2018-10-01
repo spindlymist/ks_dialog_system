@@ -1,0 +1,7 @@
+*
+!.gitignore
+!*/
+!Scripts/DialogTree.lua
+!Scripts/Utility/range.lua
+!Objects/Cursor.png
+!Objects/DialogBackground.png
