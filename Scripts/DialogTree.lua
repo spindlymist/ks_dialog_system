@@ -117,7 +117,7 @@ function DialogTree:processConsequences(consequences)
 	-- Return if there are no consequences
 	if consequences == nil then return end
 	
-	-- If there is a single conseqeuence, wrap it in a table
+	-- If there is a single consequence, wrap it in a table
 	if type(consequences) == "string" then
 		consequences = {consequences}
 	end
@@ -150,7 +150,7 @@ function DialogTree:processDialogKey(key)
 	return key
 end
 
-function DialogTree:show()
+function DialogTree:show(side)
 	-- Initialize variables
 	self.textObjects = {}
 	self.keyDown_up = false
@@ -179,16 +179,21 @@ function DialogTree:show()
 	-- Disable player movement
 	EnableKeysInput(false)
 	
+	self.leftSide = 0
+	if side == "right" then
+		self.leftSide = 400
+	end
+	
 	-- Show background
 	self.bg = Objects.NewTemplate(0, 0, 8)
 	self.bg:LoadFrame(WorldPath.."Objects/DialogBackground.png")
-	self.bg:SetX(100)
+	self.bg:SetX(self.leftSide + 100)
 	self.bg:SetY(120)
 
 	-- Show cursor
 	self.cursor = Objects.NewTemplate(0, 0, 9)
 	self.cursor:LoadFrame(WorldPath.."Objects/Cursor.png")
-	self.cursor:SetX(15)
+	self.cursor:SetX(self.leftSide + 15)
 	
 	-- Ensure sign is visible
 	self:showSign()
@@ -250,7 +255,7 @@ function DialogTree:setDialogState(key)
 		local txt = Objects.Text{Layer = -1, Permanent = 1}
 		txt:SetLayer(2)
 		txt:MoveToBack()
-		txt:SetPosition(30, y)
+		txt:SetPosition(self.leftSide + 30, y)
 		txt:SetHeight(self.responseHeight)
 		txt:SetWidth(150)
 		txt:ReplaceColor(15, 14, 14, 255, 255, 255)
