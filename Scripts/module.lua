@@ -19,6 +19,7 @@ return function(options)
     end
 
     mod.func = dofile(mod.ScriptsPath.."func.lua")
+    mod.condfx = dofile(mod.ScriptsPath.."condfx.lua")
     mod.DefaultRenderer = dofile(mod.ScriptsPath.."DefaultRenderer.lua")
     mod.DefaultInputHandler = dofile(mod.ScriptsPath.."DefaultInputHandler.lua")
     mod.DialogTree = dofile(mod.ScriptsPath.."DialogTree.lua")

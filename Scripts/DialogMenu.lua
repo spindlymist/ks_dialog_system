@@ -115,12 +115,14 @@ end
 function DialogMenu:resolveDialogKey(key)
     local tree = self.tree
 
+    print(key)
     -- Check for file specifier (path/to/file::)
-    local separatorIdx = key:find("::")
+    local separatorIdx = key:find("%$")
     if separatorIdx ~= nil then
         -- Separate into the tree name and key
         local tree_name = key:sub(1, separatorIdx - 1)
-        key = key:sub(separatorIdx + 2)
+        key = key:sub(separatorIdx + 1)
+        print(" -> " .. tree_name .. " ||| " .. key)
         -- Load new dialog
         tree = mod.DialogTree:new{name = tree_name}
     end

@@ -54,28 +54,6 @@ local function normalizeState(state)
     end
 end
 
-local function resolveVariables(code, character)
-    local prefix = 'vars["' .. mod.VarsKey .. '"]["' .. character .. '"].'
-    return code:gsub("::", prefix)
-end
-
-local function executeCondition(cond, character)
-    -- Resolve variables and execute as Lua code
-    local f = loadstring("return " .. resolveVariables(cond, character))
-    return f()
-end
-
-local function executeEffect(effect, character)
-    -- For the simple form "::variableName", just set that variable to true
-    if effect:match("[=( ]") == nil then
-        effect = effect .. "=true"
-    end
-
-    -- Resolve variables and execute as Lua code
-    local f = loadstring(resolveVariables(effect, character))
-    f()
-end
-
 --------------------------------------------------------------------------------
 
 function DialogTree:new(o)
@@ -168,13 +146,13 @@ function DialogTree:checkConditions(conds)
     conds = wrap(conds)
 
     return mod.func.all(conds, function(cond)
-        return executeCondition(cond, self.character)
+        return mod.condfx.evalCondition(cond, self.character)
     end)
 end
 
 function DialogTree:applyEffects(response)
     for _, effect in ipairs(response.effects) do
-        executeEffect(effect, self.character)
+        mod.condfx.executeEffect(effect, self.character)
     end
 
     -- Determine which dialog state is next
