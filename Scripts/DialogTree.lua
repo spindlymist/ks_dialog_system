@@ -85,11 +85,11 @@ function DialogTree:getStartKey()
     -- Find the initial dialog state
     local key = self:match(self.start)
 
-    -- Default to "start" if this is the first time
+    -- Default to "__start" if this is the first time
     -- There is no default if the character has already been spoken to
     -- The dialog writer must include their own logic using $__nth
     if key == nil and self.states.start and mod.vars(self.character).__nth == 1 then
-        return "start"
+        return "__start"
     end
 
     return key
