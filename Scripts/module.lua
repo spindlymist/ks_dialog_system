@@ -19,6 +19,13 @@ return function(options)
     end
 
     mod.func = dofile(mod.ScriptsPath.."func.lua")
+    mod.anim = dofile(mod.ScriptsPath.."anim.lua")
+    mod.cursors = {
+        Pointer = dofile(mod.ScriptsPath.."cursors/Pointer.lua"),
+        Underline = dofile(mod.ScriptsPath.."cursors/Underline.lua"),
+        Highlight = dofile(mod.ScriptsPath.."cursors/Highlight.lua"),
+        Sidelight = dofile(mod.ScriptsPath.."cursors/Sidelight.lua"),
+    }
     mod.parse = dofile(mod.ScriptsPath.."parse.lua")
     mod.DefaultRenderer = dofile(mod.ScriptsPath.."DefaultRenderer.lua")
     mod.DefaultInputHandler = dofile(mod.ScriptsPath.."DefaultInputHandler.lua")

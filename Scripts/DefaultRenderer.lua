@@ -8,7 +8,7 @@ local DefaultRenderer = {
         enableCursor = true,
         enableUnderline = true,
         enableHighlight = true,
-        enableSidelight = false,
+        enableSidelight = true,
     }
 }
 
@@ -19,14 +19,6 @@ local SignIndices = {
     B = 18,
     C = 19
 }
-
-local function clamp(x, min, max)
-    return math.min(math.max(x, min), max)
-end
-
-local function sign(x)
-    return (x > 0 and 1) or (x < 0 and -1) or 0
-end
 
 --------------------------------------------------------------------------------
 
@@ -99,42 +91,22 @@ function DefaultRenderer:show(options)
     self.backgroundImage:SetY(120)
     self.backgroundImage:SetTransparency(32)
 
-    -- Show cursor
+    -- Create cursors
+    self.cursors = {}
     if self.options.enableCursor then
-        self.cursor = Objects.NewTemplate(0, 0, 9)
-        self.cursor:LoadFrame(mod.GraphicsPath.."Cursor.png")
-        self.cursor:ReplaceColor(
-            255, 255, 255,
-            self.options.activeTextColor[1], self.options.activeTextColor[2], self.options.activeTextColor[3]
-        )
-        self.cursor:SetX(self.leftSide + 15)
+        self.cursors[#self.cursors+1] = mod.cursors.Pointer:new{color = self.options.activeTextColor}
     end
-    self.cursorY = 0
 
     if self.options.enableUnderline then
-        self.underline = Objects.NewTemplate(0, 0, 9)
-        ReplaceGraphics({mod.GraphicsPath.."Underline/Underline", 0, 19}, self.underline)
-        self.underline.Animations = {
-            Rage = {0, 19, Delay = 1, Loop = false}
-        }
-        self.underline:SetX(self.leftSide + 60 + (200-60)/2)
+        self.cursors[#self.cursors+1] = mod.cursors.Underline:new{color = self.options.activeTextColor}
     end
 
     if self.options.enableHighlight then
-        self.highlight = Objects.NewTemplate(0, 0, 9)
-        ReplaceGraphics({mod.GraphicsPath.."Highlight/Highlight", 0, 78}, self.highlight)
-        self.highlight:SetX(self.leftSide + 100)
-        self.highlight:SetY(self.cursorY)
-        self.highlight:SetTransparency(118)
+        self.cursors[#self.cursors+1] = mod.cursors.Highlight:new{color = self.options.activeTextColor}
     end
-    self.highlightY = 0
-    self.highlightHeight = 1
 
     if self.options.enableSidelight then
-        self.sidelight = Objects.NewTemplate(0, 0, 9)
-        ReplaceGraphics({mod.GraphicsPath.."Sidelight/Sidelight", 0, 78}, self.sidelight)
-        self.sidelight:SetX(self.leftSide + 196 + 2)
-        self.sidelight:SetY(self.cursorY)
+        self.cursors[#self.cursors+1] = mod.cursors.Sidelight:new{color = self.options.activeTextColor}
     end
 
     -- Ensure sign is visible
@@ -147,17 +119,17 @@ end
 
 function DefaultRenderer:hide()
     self:hideSign()
+    self.backgroundImage = self.backgroundImage:Destroy()
 
     for _, text in pairs(self.textObjects) do
         text:Destroy()
     end
     self.textObjects = {}
 
-    if self.cursor then self.cursor = self.cursor:Destroy() end
-    if self.underline then self.underline = self.underline:Destroy() end
-    if self.highlight then self.highlight = self.highlight:Destroy() end
-    if self.sidelight then self.sidelight = self.sidelight:Destroy() end
-    self.backgroundImage = self.backgroundImage:Destroy()
+    for _, cursor in pairs(self.cursors) do
+        cursor:destroy()
+    end
+    self.cursors = {}
 
     RemoveTimer(self.updateWrapper)
 end
@@ -198,6 +170,14 @@ function DefaultRenderer:updateResponses(responses)
         self.textObjects[i] = text
         y = y + self.responseHeight
     end
+
+    local _, lineHeight = self.textObjects[1]:GetCharacterSize()
+    self.layout = {
+        x = self.leftSide,
+        height = self.responseHeight,
+        width = 200,
+        lineHeight = lineHeight
+    }
 end
 
 function DefaultRenderer:selectResponse(prevIdx, idx)
@@ -213,62 +193,22 @@ function DefaultRenderer:selectResponse(prevIdx, idx)
         self.options.activeTextColor[1], self.options.activeTextColor[2], self.options.activeTextColor[3]
     )
 
-    -- Move cursor
-    self.cursorY = self.responseHeight * (idx - 0.5)
-
-    local lines = math.max(self.textObjects[idx]:GetLinesCount() + 1, 4)
-    local _, char_height = self.textObjects[idx]:GetCharacterSize()
-
-    self.highlightHeight = lines * char_height
-    self.highlightY = self.cursorY
-
-    self.sidelightHeight = self.highlightHeight
-    self.sidelightY = self.highlightY
-
-    if self.options.enableUnderline then
-        self.underline:SetY(self.cursorY + self.highlightHeight / 2 - 1)
-        self.underline:Animate("Rage")
+    -- Update cursors
+    self.layout.y = self.responseHeight * (idx - 1)
+    self.layout.lines = math.max(self.textObjects[idx]:GetLinesCount() + 1, 4)
+    for _, cursor in pairs(self.cursors) do
+        cursor:onResponseSelected(self.layout)
     end
 end
 
 -- end required interface ------------------------------------------------------
 
-local function interpolate(from, to, elapsed)
-    if from == to then return to end
-
-    local range = to - from
-    local delta = (range / 5) * elapsed
-    delta = clamp(math.abs(delta), 1, math.abs(range)) * sign(range)
-
-    return from + delta
-end
-
 function DefaultRenderer:update(tick)
     local elapsed = tick - (self.last_tick or tick)
     self.last_tick = tick
 
-    if self.cursor then
-        self.cursor:SetY(self.cursorY + 3 * math.sin(tick * math.pi / 30))
-    end
-
-    if self.highlight then
-        local y = interpolate(self.highlight:GetY(), self.highlightY, elapsed)
-        self.highlight:SetY(y)
-        local frame = interpolate(
-            self.highlight:GetAnimationFrame(),
-            self.highlightHeight,
-            elapsed)
-        self.highlight:SetAnimationFrame(frame)
-    end
-
-    if self.sidelight then
-        local y = interpolate(self.sidelight:GetY(), self.sidelightY, elapsed)
-        self.sidelight:SetY(y)
-        local frame = interpolate(
-            self.sidelight:GetAnimationFrame(),
-            self.sidelightHeight,
-            elapsed)
-        self.sidelight:SetAnimationFrame(frame)
+    for _, cursor in pairs(self.cursors) do
+        cursor:animate(tick, elapsed)
     end
 end
 
