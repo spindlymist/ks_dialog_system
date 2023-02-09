@@ -4,7 +4,7 @@ local DialogTree = {}
 -- Utilities -------------------------------------------------------------------
 
 local function wrap(value)
-    if type(value) == "string" then
+    if type(value) ~= "table" then
         return {value}
     end
     return value or {}

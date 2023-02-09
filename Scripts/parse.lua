@@ -1,6 +1,7 @@
 local mod = DialogSystem
 
 local Patterns = {}
+Patterns.DelimRepeated = "%$+"
 Patterns.Identifier = "([_%a][_%w]*)"
 Patterns.ScopedIdentifier = Patterns.Identifier .. ":" .. Patterns.Identifier
 Patterns.Leading = {
@@ -39,7 +40,7 @@ end
 local function resolveVariables(code, character)
     local parts = {}
     local from = 1
-    local delim_from, delim_to = code:find("%$+", from)
+    local delim_from, delim_to = code:find(Patterns.DelimRepeated, from)
 
     while delim_from ~= nil do
         local collapsed, hasTrailing = collapsePairs(code:sub(delim_from, delim_to))
@@ -67,6 +68,9 @@ local function resolveVariables(code, character)
 end
 
 local function parseCondition(cond, character)
+    -- Don't do anything to functions
+    if type(cond) == "function" then return cond end
+
     -- Resolve variables
     local resolved = resolveVariables(cond, character)
     assert(resolved, "Bad condition: `" .. cond .. "`")
@@ -76,6 +80,9 @@ local function parseCondition(cond, character)
 end
 
 local function parseEffect(effect, character)
+    -- Don't do anything to functions
+    if type(effect) == "function" then return effect end
+
     -- For the simple forms "$variable" and "$namespace:variable", set that variable to true
     if effect:find(Patterns.SimpleEffects.Unscoped) or
        effect:find(Patterns.SimpleEffects.Scoped)
