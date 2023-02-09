@@ -1,66 +1,69 @@
 local mod = DialogSystem
 
-local function split(str, pattern, from)
-    local parts = {}
+local Patterns = {}
+Patterns.Identifier = "([_%a][_%w]*)"
+Patterns.ScopedIdentifier = Patterns.Identifier .. ":" .. Patterns.Identifier
+Patterns.Leading = {
+    Identifier = "^" .. Patterns.Identifier,
+    ScopedIdentifier = "^" .. Patterns.ScopedIdentifier,
+}
+Patterns.SimpleEffects = {
+    Unscoped = "^%s*%$" .. Patterns.Identifier .. "%s*$",
+    Scoped = "^%s*%$" .. Patterns.ScopedIdentifier .. "%s*$",
+}
 
-    from = from or 1
-    local sep_start, sep_end = str:find(pattern, from)
+local function collapsePairs(delims)
+    local count = math.floor(#delims / 2)
+    local hasTrailing = #delims % 2 == 1
 
-    while sep_start ~= nil do
-        parts[#parts + 1] = str:sub(from, sep_start - 1)
-        from = sep_end + 1
-        sep_start, sep_end = str:find(pattern, from)
-    end
-
-    parts[#parts + 1] = str:sub(from)
-
-    return parts
+    return string.rep(delims:sub(1, 1), count), hasTrailing
 end
 
-local function match_with_indices(str, pattern)
-    local from, to = str:find(pattern)
-    return from and str:sub(from, to), from, to
+local function parseScopedIdentifier(code, default_ns, from)
+    local namespace, identifier = code:match(Patterns.Leading.ScopedIdentifier, from)
+
+    if namespace then
+        from = from + (#namespace + 1 + #identifier) -- +1 for the the colon
+    else
+        namespace = default_ns
+        identifier = code:match(Patterns.Leading.Identifier, from)
+
+        if not identifier then return nil, nil, nil end
+
+        from = from + #identifier
+    end
+
+    return namespace, identifier, from
 end
 
 local function resolveVariables(code, character)
-    local parts = split(code, "%$%$")
-    local syntax_error = false
+    local parts = {}
+    local from = 1
+    local delim_from, delim_to = code:find("%$+", from)
 
-    parts = mod.func.map(parts, function(part)
-        local chunks = {}
-        local from = 1
+    while delim_from ~= nil do
+        local collapsed, hasTrailing = collapsePairs(code:sub(delim_from, delim_to))
 
-        local next_dollar = part:find("%$", from)
-        while next_dollar ~= nil do
-            local before = part:sub(from, next_dollar - 1)
-            local after = part:sub(next_dollar + 1)
+        parts[#parts+1] = code:sub(from, delim_from - 1)
+        parts[#parts+1] = collapsed
 
-            local namespace, ns_from, _ = match_with_indices(before, "([_%a][_%w]*)$")
-            namespace = namespace or character
+        from = delim_to + 1
 
-            local identifier, _, id_to = match_with_indices(after, "^([_%a][_%w]*)")
-            if identifier == nil then
-                syntax_error = true
-                return
-            end
+        if hasTrailing then
+            local namespace, identifier
+            namespace, identifier, from = parseScopedIdentifier(code, character, from)
 
-            chunks[#chunks+1] = part:sub(from, (ns_from or next_dollar) - 1)
-            chunks[#chunks+1] = 'vars["' .. mod.VarsKey .. '"]["' .. namespace .. '"]["' .. identifier .. '"]'
+            if not identifier then return nil end -- any unpaired $ must be followed by an identifier
 
-            from = (next_dollar + 1) + id_to
-            next_dollar = part:find("%$", from)
+            parts[#parts+1] = 'vars["' .. mod.VarsKey .. '"].' .. namespace .. '.' .. identifier
         end
 
-        chunks[#chunks+1] = part:sub(from)
-
-        return table.concat(chunks)
-    end)
-
-    if syntax_error then
-        return nil
-    else
-        return table.concat(parts, "$")
+        delim_from, delim_to = code:find("%$+", from)
     end
+
+    parts[#parts+1] = code:sub(from)
+
+    return table.concat(parts)
 end
 
 local function parseCondition(cond, character)
@@ -73,9 +76,9 @@ local function parseCondition(cond, character)
 end
 
 local function parseEffect(effect, character)
-    -- For the simple forms "$variable" and "namespace$variable", set that variable to true
-    if effect:match("^%$([_%a][_%w]*)$") or
-       effect:match("^([_%a][_%w]*)%$([_%a][_%w]*)$")
+    -- For the simple forms "$variable" and "$namespace:variable", set that variable to true
+    if effect:find(Patterns.SimpleEffects.Unscoped) or
+       effect:find(Patterns.SimpleEffects.Scoped)
     then
         effect = effect .. "=true"
     end

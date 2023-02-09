@@ -115,8 +115,8 @@ end
 function DialogMenu:resolveDialogKey(key)
     local tree = self.tree
 
-    -- Check for file specifier (path/to/file$)
-    local separatorIdx = key:find("%$")
+    -- Check for file specifier (path/to/file:)
+    local separatorIdx = key:find(":")
     if separatorIdx ~= nil then
         -- Separate into the tree name and key
         local tree_name = key:sub(1, separatorIdx - 1)
