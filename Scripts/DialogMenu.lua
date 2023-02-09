@@ -35,7 +35,7 @@ function DialogMenu:new(o)
 end
 
 function DialogMenu:show(options)
-    -- Increase the ::__nth variable
+    -- Increase the $__nth variable
     mod.vars(self.tree.character).__nth = mod.vars(self.tree.character).__nth + 1
 
     -- Determine starting state (abort if absent)
@@ -115,14 +115,12 @@ end
 function DialogMenu:resolveDialogKey(key)
     local tree = self.tree
 
-    print(key)
-    -- Check for file specifier (path/to/file::)
+    -- Check for file specifier (path/to/file$)
     local separatorIdx = key:find("%$")
     if separatorIdx ~= nil then
         -- Separate into the tree name and key
         local tree_name = key:sub(1, separatorIdx - 1)
         key = key:sub(separatorIdx + 1)
-        print(" -> " .. tree_name .. " ||| " .. key)
         -- Load new dialog
         tree = mod.DialogTree:new{name = tree_name}
     end

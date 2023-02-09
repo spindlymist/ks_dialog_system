@@ -87,7 +87,7 @@ function DialogTree:getStartKey()
 
     -- Default to "start" if this is the first time
     -- There is no default if the character has already been spoken to
-    -- The dialog writer must include their own logic using ::__nth
+    -- The dialog writer must include their own logic using $__nth
     if key == nil and self.states.start and mod.vars(self.character).__nth == 1 then
         return "start"
     end
@@ -146,13 +146,13 @@ function DialogTree:checkConditions(conds)
     conds = wrap(conds)
 
     return mod.func.all(conds, function(cond)
-        return mod.condfx.evalCondition(cond, self.character)
+        return mod.parse.parseCondition(cond, self.character)()
     end)
 end
 
 function DialogTree:applyEffects(response)
     for _, effect in ipairs(response.effects) do
-        mod.condfx.executeEffect(effect, self.character)
+        mod.parse.parseEffect(effect, self.character)()
     end
 
     -- Determine which dialog state is next
