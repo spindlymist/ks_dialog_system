@@ -21,9 +21,8 @@ function DialogMenu:new(o)
     -- Load dialog tree from file
     o.tree = mod.DialogTree:new{name = o.tree}
 
-    -- Initialize character table
-    mod.vars()[o.tree.character] = mod.vars(o.tree.character) or {}
-    mod.vars(o.tree.character).__nth = 0 -- the # of times this character has been spoken to
+    -- Reset the $__nth variable
+    mod.vars(o.tree.character).__nth = 0
 
     -- Render passive dialog if present
     local passive = o.tree:getPassiveDialog()

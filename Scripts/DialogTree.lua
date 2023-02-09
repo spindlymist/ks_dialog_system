@@ -65,16 +65,27 @@ function DialogTree:new(o)
     local data = dofile(mod.TreesPath .. o.name .. ".lua")
 
     o.character = data.__meta.character
+    o:initCharacterTable(data.__meta.init)
     o.start = data.__meta.start
     o.passive = data.__meta.passive
 
     data.__meta = nil
     o.states = data
 
-    -- Create prefixes for variables
-    o.charPrefix = 'vars["' .. mod.VarsKey .. '"]["' .. o.character .. '"].'
-
     return o
+end
+
+function DialogTree:initCharacterTable(initValues)
+    -- Create character table if necessary
+    local characterTable = mod.vars(self.character) or {}
+
+    -- Initialize undefined keys
+    initValues = initValues or {}
+    for key, value in pairs(initValues) do
+        characterTable[key] = characterTable[key] or value
+    end
+
+    mod.vars()[self.character] = characterTable
 end
 
 function DialogTree:getPassiveDialog()
@@ -88,7 +99,7 @@ function DialogTree:getStartKey()
     -- Default to "__start" if this is the first time
     -- There is no default if the character has already been spoken to
     -- The dialog writer must include their own logic using $__nth
-    if key == nil and self.states.start and mod.vars(self.character).__nth == 1 then
+    if key == nil and self.states.__start and mod.vars(self.character).__nth == 1 then
         return "__start"
     end
 
