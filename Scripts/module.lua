@@ -34,7 +34,7 @@ return function(options)
         Pointer = dofile(mod.ScriptsPath.."cursors/Pointer.lua"),
         Underline = dofile(mod.ScriptsPath.."cursors/Underline.lua"),
         Highlight = dofile(mod.ScriptsPath.."cursors/Highlight.lua"),
-        Sidelight = dofile(mod.ScriptsPath.."cursors/Sidelight.lua"),
+        Tracer = dofile(mod.ScriptsPath.."cursors/Tracer.lua"),
     }
     mod.DefaultRenderer = dofile(mod.ScriptsPath.."DefaultRenderer.lua")
     mod.DefaultInputHandler = dofile(mod.ScriptsPath.."DefaultInputHandler.lua")

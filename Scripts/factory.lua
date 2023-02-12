@@ -41,7 +41,7 @@ local Cursors = {
     pointer = mod.cursors.Pointer,
     underline = mod.cursors.Underline,
     highlight = mod.cursors.Highlight,
-    sidelight = mod.cursors.Sidelight,
+    tracer = mod.cursors.Tracer,
 }
 
 --[[----------------------------------------------------------------------------
