@@ -35,7 +35,7 @@ function Tracer:hide()
     self.object = self.object:Destroy()
 end
 
-function Tracer:onResponseSelected(layout)
+function Tracer:onLayout(layout)
     local offset = (self.options.side == "left" and 0) or 196
     self.object:SetX(layout.x + offset + 2)
     self.targetHeight = layout.lines * layout.lineHeight

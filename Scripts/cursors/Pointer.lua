@@ -28,7 +28,7 @@ function Pointer:hide()
     self.object = self.object:Destroy()
 end
 
-function Pointer:onResponseSelected(layout)
+function Pointer:onLayout(layout)
     self.object:SetTransparency(self.options.transparency)
     self.object:SetX(layout.x + self.options.leftMargin)
     self.y = layout.y + layout.height / 2

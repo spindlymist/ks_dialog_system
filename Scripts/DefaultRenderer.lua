@@ -192,7 +192,7 @@ function DefaultRenderer:selectResponse(prevIdx, idx)
     self.layout.y = self.layout.height * (idx - 1)
     self.layout.lines = math.max(self.textObjects[idx]:GetLinesCount() + 1, 4)
     for _, cursor in pairs(self.cursors) do
-        cursor:onResponseSelected(self.layout)
+        cursor:onLayout(self.layout)
     end
 end
 

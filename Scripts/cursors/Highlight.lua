@@ -35,7 +35,7 @@ function Highlight:hide()
     self.object = self.object:Destroy()
 end
 
-function Highlight:onResponseSelected(layout)
+function Highlight:onLayout(layout)
     self.object:SetX(layout.x + 100)
     self.targetHeight = layout.lines * layout.lineHeight
     self.targetY = layout.y + layout.height * 0.5

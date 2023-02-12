@@ -40,7 +40,7 @@ function Underline:hide()
     self.object = self.object:Destroy()
 end
 
-function Underline:onResponseSelected(layout)
+function Underline:onLayout(layout)
     local y_center = layout.y + layout.height * 0.5
     local y_offset = (layout.lines * layout.lineHeight) / 2
 
