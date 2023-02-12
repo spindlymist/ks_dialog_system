@@ -22,19 +22,14 @@ local SignIndices = {
 function DefaultRenderer:new(options)
     local o = setmetatable({}, self)
 
-    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
-    o:setOptions()
+    o.options = setmetatable(options or {}, { __index = self.Defaults })
     o.textObjects = {}
     o.cursors = {}
 
-    self.sign = o:findSign()
-    self:hideSign()
+    o:findSign()
+    o:hideSign()
 
     return o
-end
-
-function DefaultRenderer:setOptions(options)
-    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
 end
 
 -- Sign management -------------------------------------------------------------
@@ -44,15 +39,13 @@ function DefaultRenderer:findSign()
     local signIndex = SignIndices[self.options.sign]
 
     -- Find the sign object
-    local sign = {
+    self.sign = {
         object = Objects.Find{Bank = 0, Obj = signIndex}
     }
 
     -- Record original sign location
-    sign.x = sign.object:GetX()
-    sign.y = sign.object:GetY()
-
-    return sign
+    self.sign.x = self.sign.object:GetX()
+    self.sign.y = self.sign.object:GetY()
 end
 
 function DefaultRenderer:hideSign()
@@ -74,13 +67,7 @@ end
 
 -- Begin required interface ----------------------------------------------------
 
-function DefaultRenderer:show(options)
-    self:setOptions(options)
-
-    -- Temporarily override instance options
-    self.options = options or {}
-    setmetatable(self.options, { __index = self.instanceDefaults })
-
+function DefaultRenderer:show()
     -- Determine x position of dialog interface based on specified docking (default left)
     if self.options.dock == "right" then
         self.leftSide = 400
@@ -125,7 +112,6 @@ function DefaultRenderer:hide()
     self.cursors = {}
 
     RemoveTimer(self.updateWrapper)
-    self:setOptions()
 end
 
 function DefaultRenderer:showPassiveDialog(text)

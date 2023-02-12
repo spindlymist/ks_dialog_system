@@ -1,9 +1,7 @@
 local mod = DialogSystem
 
 local DialogMenu = {
-    Defaults = {
-        events = {},
-    }
+    Defaults = {}
 }
 DialogMenu.__index = DialogMenu
 
@@ -12,14 +10,9 @@ function DialogMenu:new(renderer, inputHandler, options)
 
     o.renderer = renderer
     o.inputHandler = inputHandler
-    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
-    o:setOptions()
+    o.options = setmetatable(options or {}, { __index = self.Defaults })
 
     return o
-end
-
-function DialogMenu:setOptions(options)
-    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
 end
 
 function DialogMenu:load(tree)
@@ -50,8 +43,8 @@ function DialogMenu:initCharacterTable(initValues)
     mod.vars()[self.tree.character] = characterTable
 end
 
-function DialogMenu:show(options, renderOptions, inputOptions)
-    self:setOptions(options)
+function DialogMenu:show(onDialogEnd)
+    self.onDialogEnd = onDialogEnd
 
     -- Increase the $__nth variable
     mod.vars(self.tree.character).__nth = mod.vars(self.tree.character).__nth + 1
@@ -63,8 +56,8 @@ function DialogMenu:show(options, renderOptions, inputOptions)
     end
 
     -- Activate renderer and input handler
-    self.renderer:show(renderOptions)
-    self.inputHandler:enable(self, inputOptions)
+    self.renderer:show()
+    self.inputHandler:enable(self)
 
     -- Go to the initial dialog state
     self:setDialogState(start)
@@ -78,11 +71,9 @@ function DialogMenu:hide()
     self.inputHandler:disable()
 
     -- Call dialog end callback if present
-    if self.options.events.onDialogEnd then
-        self.options.events.onDialogEnd()
+    if self.onDialogEnd then
+        self.onDialogEnd()
     end
-
-    self:setOptions()
 end
 
 function DialogMenu:selectResponse(idx)
@@ -161,7 +152,8 @@ function DialogMenu:setDialogState(key)
         return self:hide()
     elseif self.dialogState.isTerminal then
         self:hide()
-        return self.renderer:showPassiveDialog(self.dialogState.text)
+        self.renderer:showPassiveDialog(self.dialogState.text)
+        return
     end
 
     -- Render

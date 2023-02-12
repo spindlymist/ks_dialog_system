@@ -83,47 +83,34 @@ end
 
 --[[----------------------------------------------------------------------------
 Converts the idiosyncratic factory options to the standard formats understood by
-`DialogMenu`, `DefaultRenderer`, and `DefaultInputHandler`. Optionally inherits
+`DialogMenu`, `DefaultRenderer`, and `DefaultInputHandler`. Inherits unspecified
 options from a parent.
 
     @param options The options table to convert.
-    @param parent The options to inherit. If nil, nothing is inherited.
+    @param parent The options to inherit from.
     @return A table containing the normalized options for each component.
 --]]----------------------------------------------------------------------------
 local function normalizeOptions(options, parent)
-    -- Handle nil/empty options
-    if type(options) ~= "table" or next(options) == nil then
-        return {
-            renderer = mod.DefaultRenderer,
-            inputHandler = mod.DefaultInputHandler,
-        }
+    if options == nil or next(options) == nil then
+        return parent
     end
 
     -- Render options
     local renderKeys = { "sign", "dock", "textColor", "activeTextColor" }
     local renderOptions = inheritKeys(options, {}, renderKeys)
+    inheritKeys(parent.render, renderOptions, renderKeys)
 
-    if parent then
-        inheritKeys(parent.render, renderOptions, renderKeys)
-    end
-
-    renderOptions.cursors = normalizeCursors(options, parent and parent.render.cursors)
+    renderOptions.cursors = normalizeCursors(options, parent.render.cursors)
 
     -- Input options
     local inputKeys = { "keys" }
     local inputOptions = inheritKeys(options, {}, inputKeys)
-
-    if parent then
-        inheritKeys(parent.input, inputOptions, inputKeys)
-    end
+    inheritKeys(parent.input, inputOptions, inputKeys)
 
     -- Menu options
     local menuKeys = { "events" }
     local menuOptions = inheritKeys(options, {}, menuKeys)
-
-    if parent then
-        inheritKeys(parent.menu, menuOptions, menuKeys)
-    end
+    inheritKeys(parent.menu, menuOptions, menuKeys)
 
     return {
         renderer = options.renderer or mod.DefaultRenderer,
@@ -138,13 +125,12 @@ end
 Constructs a "template function" for creating menus with the specified options.
 
 The template function takes a dialog tree to load and options to override. It
-creates the menu and returns a "display function". The display function takes
-options to temporarily override and displays the menu.
+returns a new `DialogMenu`.
 
 Typically, `withOptions` is used to create a global template used throughout the
-story. The template function is called to load a dialog tree and set up options
-for a particular screen/character. The display function is called to display the
-menu and set up options for a particular situation.
+story. The template function is called inside an x####y####() function to load a
+dialog tree and set up options for that particular screen/character. Finally,
+the menu's `show` method is called on a shift event.
 
 Example:
     local createMenu = withOptions{
@@ -152,17 +138,15 @@ Example:
     }
 
     function x1000y1000()
-        local showMenu = createMenu{"MyCharacter/MyTree",
-            textColor = {192, 92, 0},
+        local menu = createMenu{"MyCharacter/MyTree",
+            textColor = {192, 92, 32},
             activeTextColor = {255, 128, 0},
         }
 
         function events.ShiftA()
-            showMenu{dock = "right"}
-        end
-
-        function events.ShiftB()
-            showMenu{dock = "left"}
+            menu:show(function()
+                print("Finished talking")
+            end)
         end
     end
 
@@ -170,9 +154,9 @@ Example:
     @return A function that creates a new menu and returns a function for
         displaying that menu.
 --]]----------------------------------------------------------------------------
-local function withOptions(options)
-    -- Initialize/normalize template
-    local template = normalizeOptions(options, {
+local function withOptions(templateOptions)
+    -- Initialize/normalize template options
+    templateOptions = normalizeOptions(templateOptions, {
         render = { cursors = {
             [mod.cursors.Pointer] = {},
             [mod.cursors.Highlight] = {},
@@ -184,29 +168,28 @@ local function withOptions(options)
 
     -- Create template function
     return function(treeOrOptions)
-        local tree, instance
+        local tree, options
 
         -- Disambiguate parameter
         if type(treeOrOptions) == "table" then
             tree = treeOrOptions.tree or treeOrOptions[1]
-            instance = treeOrOptions
+            options = treeOrOptions
         else
             tree = treeOrOptions
         end
 
-        instance = normalizeOptions(instance, template)
+        options = normalizeOptions(options, templateOptions)
 
         -- Create menu
-        local renderer = instance.renderer:new(instance.render)
-        local inputHandler = instance.inputHandler:new(instance.input)
-        local menu = mod.DialogMenu:new(renderer, inputHandler, instance.menu)
-        menu:load(tree)
+        local renderer = options.renderer:new(options.render)
+        local inputHandler = options.inputHandler:new(options.input)
+        local menu = mod.DialogMenu:new(renderer, inputHandler, options.menu)
 
-        -- Create display function
-        return function(options)
-            options = normalizeOptions(options, instance)
-            menu:show(options.menu, options.render, options.input)
+        if tree then
+            menu:load(tree)
         end
+
+        return menu
     end
 end
 

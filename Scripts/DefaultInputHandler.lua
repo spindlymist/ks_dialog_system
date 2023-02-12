@@ -14,23 +14,13 @@ DefaultInputHandler.__index = DefaultInputHandler
 function DefaultInputHandler:new(options)
     local o = setmetatable({}, self)
 
-    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
-    o:setOptions()
+    o.options = setmetatable(options or {}, { __index = self.Defaults })
 
     return o
 end
 
-function DefaultInputHandler:setOptions(options)
-    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
-end
-
-function DefaultInputHandler:enable(callbacks, options)
-    self:setOptions(options)
+function DefaultInputHandler:enable(callbacks)
     self.callbacks = callbacks
-
-    -- Temporarily override instance options
-    self.options = options or {}
-    setmetatable(self.options, { __index = self.instanceDefaults })
 
     -- Disable player movement
     EnableKeysInput(false)
@@ -59,7 +49,6 @@ end
 function DefaultInputHandler:disable()
     RemoveTimer(self.updateWrapper)
     EnableKeysInput(true)
-    self:setOptions()
 end
 
 function DefaultInputHandler:update(tick)
