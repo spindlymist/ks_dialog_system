@@ -65,7 +65,7 @@ function DialogTree:new(o)
     local data = dofile(mod.TreesPath .. o.name .. ".lua")
 
     o.character = data.__meta.character
-    o:initCharacterTable(data.__meta.init)
+    o.init = data.__meta.init
     o.start = data.__meta.start
     o.passive = data.__meta.passive
 
@@ -73,19 +73,6 @@ function DialogTree:new(o)
     o.states = data
 
     return o
-end
-
-function DialogTree:initCharacterTable(initValues)
-    -- Create character table if necessary
-    local characterTable = mod.vars(self.character) or {}
-
-    -- Initialize undefined keys
-    initValues = initValues or {}
-    for key, value in pairs(initValues) do
-        characterTable[key] = characterTable[key] or value
-    end
-
-    mod.vars()[self.character] = characterTable
 end
 
 function DialogTree:getPassiveDialog()

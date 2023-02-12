@@ -1,37 +1,43 @@
 local mod = DialogSystem
 
-local Underline = {}
+local Underline = {
+    Defaults = {
+        transparency = 0,
+        leftMargin = 30,
+        rightMargin = 30,
+        animTime = 20,
+        animCurve = mod.anim.Bezier:new{
+            { x = 0.0, y = 0.0 },
+            { x = 0.5, y = 1.0 },
+            { x = 1.0, y = 1.0 },
+        },
+        layer = 9,
+    }
+}
 Underline.__index = Underline
 
 function Underline:new(options)
-    local o = { options = options or {} }
-    setmetatable(o, self)
+    options = setmetatable(options or {}, { __index = self.Defaults })
+    local o = setmetatable({ options = options }, self)
 
-    o.object = Objects.NewTemplate(0, 0, o.options.layer or 9)
-    ReplaceGraphics({mod.GraphicsPath.."Underline/Underline", 0, 200}, o.object)
-
-    if o.options.color then
-        o.object:ReplaceColor(
-            255, 255, 255,
-            o.options.color[1], o.options.color[2], o.options.color[3]
-        )
+    if not self.Template then
+        self.Template = Objects.NewGlobalTemplate()
+        ReplaceGraphics({mod.GraphicsPath.."Underline/Underline", 0, 200}, mod.TemplatesBank, self.Template)
     end
 
-    o.options.leftMargin = o.options.leftMargin or 30
-    o.targetWidth = 170
+    o.width = 200 - options.leftMargin - options.rightMargin
     o.t = 0
-
-    o.curve = mod.anim.Bezier:new{
-        { x = 0.0, y = 0.0 },
-        { x = 0.5, y = 1.0 },
-        { x = 1.0, y = 1.0 },
-    }
 
     return o
 end
 
-function Underline:destroy()
-    self.object:Destroy()
+function Underline:show()
+    self.object = Objects.new(mod.TemplatesBank, self.Template, 0, 0, self.options.layer)
+    self.object:SetTransparency(self.options.transparency)
+end
+
+function Underline:hide()
+    self.object = self.object:Destroy()
 end
 
 function Underline:onResponseSelected(layout)
@@ -45,9 +51,9 @@ function Underline:onResponseSelected(layout)
 end
 
 function Underline:animate(tick, elapsed)
-    self.t = mod.anim.clamp(self.t + elapsed * .05, 0, 1)
-    local width = self.curve:evaluate(self.t).y * self.targetWidth
-    self.object:SetAnimationFrame(width)
+    self.t = mod.anim.clamp(self.t + elapsed * (1 / self.options.animTime), 0, 1)
+    local frame = self.options.animCurve:evaluate(self.t).y * self.width
+    self.object:SetAnimationFrame(frame)
 end
 
 return Underline

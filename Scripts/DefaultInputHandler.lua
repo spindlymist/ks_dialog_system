@@ -1,34 +1,31 @@
 local mod = DialogSystem
+
 local DefaultInputHandler = {
     Defaults = {
-        Keys = {
+        keys = {
             Next = "Down",
             Prev = "Up",
             Confirm = "Jump",
-        }
+        },
     }
 }
+DefaultInputHandler.__index = DefaultInputHandler
 
-function DefaultInputHandler:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
+function DefaultInputHandler:new(options)
+    local o = setmetatable({}, self)
 
-    -- Initialize default options for this instance
-    o:initOptions()
+    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
+    o:setOptions()
 
     return o
 end
 
-function DefaultInputHandler:initOptions()
-    self.instanceDefaults = self.options or {}
-    setmetatable(self.instanceDefaults, { __index = DefaultInputHandler.Defaults })
-
-    self.options = {}
-    setmetatable(self.options, { __index = self.instanceDefaults })
+function DefaultInputHandler:setOptions(options)
+    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
 end
 
 function DefaultInputHandler:enable(callbacks, options)
+    self:setOptions(options)
     self.callbacks = callbacks
 
     -- Temporarily override instance options
@@ -48,9 +45,9 @@ function DefaultInputHandler:enable(callbacks, options)
 end
 
 function DefaultInputHandler:initKeyStates()
-    local nextIsDown = Controls.check(self.options.Keys.Next)
-    local prevIsDown = Controls.check(self.options.Keys.Prev)
-    local confIsDown = Controls.check(self.options.Keys.Confirm)
+    local nextIsDown = Controls.check(self.options.keys.Next)
+    local prevIsDown = Controls.check(self.options.keys.Prev)
+    local confIsDown = Controls.check(self.options.keys.Confirm)
 
     self.keyStates = {
         Next    = { isDown = nextIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = true },
@@ -62,6 +59,7 @@ end
 function DefaultInputHandler:disable()
     RemoveTimer(self.updateWrapper)
     EnableKeysInput(true)
+    self:setOptions()
 end
 
 function DefaultInputHandler:update(tick)
@@ -78,7 +76,7 @@ end
 
 function DefaultInputHandler:updateKeyStates()
     for key, state in pairs(self.keyStates) do
-        local isDown = Controls.check(self.options.Keys[key])
+        local isDown = Controls.check(self.options.keys[key])
 
         if isDown then
             state.wasReleased = false

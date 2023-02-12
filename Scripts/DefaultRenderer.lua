@@ -1,18 +1,17 @@
 local mod = DialogSystem
+
 local DefaultRenderer = {
     Defaults = {
         sign = "A",
         dock = "left",
         textColor = {192, 192, 192},
         activeTextColor = {255, 255, 255},
-        enableCursor = true,
-        enableUnderline = true,
-        enableHighlight = true,
-        enableSidelight = true,
+        background = mod.GraphicsPath.."Background.png",
+        transparency = 32,
+        cursors = {},
     }
 }
-
--- Utilities -------------------------------------------------------------------
+DefaultRenderer.__index = DefaultRenderer
 
 local SignIndices = {
     A = 17,
@@ -20,59 +19,64 @@ local SignIndices = {
     C = 19
 }
 
---------------------------------------------------------------------------------
+function DefaultRenderer:new(options)
+    local o = setmetatable({}, self)
 
-function DefaultRenderer:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-
+    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
+    o:setOptions()
     o.textObjects = {}
-    o:initOptions()
-    o:initSign()
-    o:hideSign()
+    o.cursors = {}
+
+    self.sign = o:findSign()
+    self:hideSign()
 
     return o
 end
 
-function DefaultRenderer:initOptions()
-    self.instanceDefaults = self.options or {}
-    setmetatable(self.instanceDefaults, { __index = DefaultRenderer.Defaults })
-
-    self.options = {}
-    setmetatable(self.options, { __index = self.instanceDefaults })
+function DefaultRenderer:setOptions(options)
+    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
 end
 
-function DefaultRenderer:initSign()
-    -- Convert sign letter to object index and find sign object
+-- Sign management -------------------------------------------------------------
+
+function DefaultRenderer:findSign()
+    -- Convert sign letter to object index
     local signIndex = SignIndices[self.options.sign]
-    self.signObject = Objects.Find{Bank = 0, Obj = signIndex}
-    self.signObject:SetFlag(0, true)
+
+    -- Find the sign object
+    local sign = {
+        object = Objects.Find{Bank = 0, Obj = signIndex}
+    }
 
     -- Record original sign location
-    self.signX = self.signObject:GetX()
-    self.signY = self.signObject:GetY()
+    sign.x = sign.object:GetX()
+    sign.y = sign.object:GetY()
+
+    return sign
 end
 
 function DefaultRenderer:hideSign()
     -- Move it off screen
-    self.signObject:SetPosition(0, -120)
+    self.sign.object:SetPosition(0, -120)
 end
 
 function DefaultRenderer:showSign()
     -- Restore its original position
-    self.signObject:SetPosition(self.signX, self.signY)
+    self.sign.object:SetPosition(self.sign.x, self.sign.y)
 end
 
 function DefaultRenderer:updateSign(text)
-    self.signObject:SetString(0, text)
-    self.signObject:SetFlag(1, false)
-    self.signObject:SetFlag(2, false)
+    self.sign.object:SetString(0, text)
+    self.sign.object:SetFlag(0, true)
+    self.sign.object:SetFlag(1, false)
+    self.sign.object:SetFlag(2, false)
 end
 
 -- Begin required interface ----------------------------------------------------
 
 function DefaultRenderer:show(options)
+    self:setOptions(options)
+
     -- Temporarily override instance options
     self.options = options or {}
     setmetatable(self.options, { __index = self.instanceDefaults })
@@ -85,28 +89,17 @@ function DefaultRenderer:show(options)
     end
 
     -- Show background
-    self.backgroundImage = Objects.NewTemplate(0, 0, 8)
-    self.backgroundImage:LoadFrame(mod.GraphicsPath.."DialogBackground.png")
-    self.backgroundImage:SetX(self.leftSide + 100)
-    self.backgroundImage:SetY(120)
-    self.backgroundImage:SetTransparency(32)
+    self.bgObject = Objects.NewTemplate(0, 0, 8)
+    self.bgObject:LoadFrame(self.options.background)
+    self.bgObject:SetX(self.leftSide + 100)
+    self.bgObject:SetY(120)
+    self.bgObject:SetTransparency(self.options.transparency)
 
-    -- Create cursors
-    self.cursors = {}
-    if self.options.enableCursor then
-        self.cursors[#self.cursors+1] = mod.cursors.Pointer:new{color = self.options.activeTextColor}
-    end
-
-    if self.options.enableUnderline then
-        self.cursors[#self.cursors+1] = mod.cursors.Underline:new{color = self.options.activeTextColor}
-    end
-
-    if self.options.enableHighlight then
-        self.cursors[#self.cursors+1] = mod.cursors.Highlight:new{color = self.options.activeTextColor}
-    end
-
-    if self.options.enableSidelight then
-        self.cursors[#self.cursors+1] = mod.cursors.Sidelight:new{color = self.options.activeTextColor}
+    -- Show cursors
+    for class, options in pairs(self.options.cursors) do
+        local cursor = class:new(options)
+        cursor:show()
+        self.cursors[#self.cursors+1] = cursor
     end
 
     -- Ensure sign is visible
@@ -119,19 +112,20 @@ end
 
 function DefaultRenderer:hide()
     self:hideSign()
-    self.backgroundImage = self.backgroundImage:Destroy()
+    self.bgObject = self.bgObject:Destroy()
 
-    for _, text in pairs(self.textObjects) do
+    for _, text in ipairs(self.textObjects) do
         text:Destroy()
     end
     self.textObjects = {}
 
     for _, cursor in pairs(self.cursors) do
-        cursor:destroy()
+        cursor:hide()
     end
     self.cursors = {}
 
     RemoveTimer(self.updateWrapper)
+    self:setOptions()
 end
 
 function DefaultRenderer:showPassiveDialog(text)
@@ -145,21 +139,21 @@ end
 
 function DefaultRenderer:updateResponses(responses)
     -- Delete existing text objects
-    for _, text in pairs(self.textObjects) do
+    for _, text in ipairs(self.textObjects) do
         text:Destroy()
     end
     self.textObjects = {}
 
     -- Create text objects
-    self.responseHeight = 240 / #responses
+    local responseHeight = 240 / #responses
     local y = 0
-    for i, response in pairs(responses) do
+    for i, response in ipairs(responses) do
         local text = Objects.Text{Layer = 8, Permanent = 0}
 
         text:SetLayer(2)
         text:MoveToBack()
         text:SetPosition(self.leftSide + 30, y)
-        text:SetHeight(self.responseHeight)
+        text:SetHeight(responseHeight)
         text:SetWidth(150)
         text:ReplaceColor(
             15, 14, 14,
@@ -168,13 +162,14 @@ function DefaultRenderer:updateResponses(responses)
         text:SetText(response)
 
         self.textObjects[i] = text
-        y = y + self.responseHeight
+        y = y + responseHeight
     end
 
+    -- Update layout data (for cursors)
     local _, lineHeight = self.textObjects[1]:GetCharacterSize()
     self.layout = {
         x = self.leftSide,
-        height = self.responseHeight,
+        height = responseHeight,
         width = 200,
         lineHeight = lineHeight
     }
@@ -194,7 +189,7 @@ function DefaultRenderer:selectResponse(prevIdx, idx)
     )
 
     -- Update cursors
-    self.layout.y = self.responseHeight * (idx - 1)
+    self.layout.y = self.layout.height * (idx - 1)
     self.layout.lines = math.max(self.textObjects[idx]:GetLinesCount() + 1, 4)
     for _, cursor in pairs(self.cursors) do
         cursor:onResponseSelected(self.layout)

@@ -1,39 +1,58 @@
 local mod = DialogSystem
-local DialogMenu = {}
 
-function DialogMenu:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
+local DialogMenu = {
+    Defaults = {
+        events = {},
+    }
+}
+DialogMenu.__index = DialogMenu
 
-    -- Initialize renderer
-    if o.renderer == nil then
-        o.rendererOptions = o.rendererOptions or {}
-        o.renderer = mod.DefaultRenderer:new{options = o.rendererOptions}
-    end
+function DialogMenu:new(renderer, inputHandler, options)
+    local o = setmetatable({}, self)
 
-    -- Initialize input handler
-    if o.inputHandler == nil then
-        o.inputHandlerOptions = o.inputHandlerOptions or {}
-        o.inputHandler = mod.DefaultInputHandler:new{options = o.inputHandlerOptions}
-    end
-
-    -- Load dialog tree from file
-    o.tree = mod.DialogTree:new{name = o.tree}
-
-    -- Reset the $__nth variable
-    mod.vars(o.tree.character).__nth = 0
-
-    -- Render passive dialog if present
-    local passive = o.tree:getPassiveDialog()
-    if passive then
-        o.renderer:showPassiveDialog(passive)
-    end
+    o.renderer = renderer
+    o.inputHandler = inputHandler
+    o.instanceDefaults = setmetatable(options or {}, { __index = self.Defaults })
+    o:setOptions()
 
     return o
 end
 
-function DialogMenu:show(options)
+function DialogMenu:setOptions(options)
+    self.options = setmetatable(options or {}, { __index = self.instanceDefaults })
+end
+
+function DialogMenu:load(tree)
+    -- Load dialog tree from file
+    self.tree = mod.DialogTree:new{name = tree}
+    self:initCharacterTable(self.tree.init)
+
+    -- Render passive dialog if present
+    local passive = self.tree:getPassiveDialog()
+    if passive then
+        self.renderer:showPassiveDialog(passive)
+    end
+end
+
+function DialogMenu:initCharacterTable(initValues)
+    -- Create character table if necessary
+    local characterTable = mod.vars(self.tree.character) or {}
+
+    -- Initialize undefined keys
+    initValues = initValues or {}
+    for key, value in pairs(initValues) do
+        characterTable[key] = characterTable[key] or value
+    end
+
+    -- Reset the $__nth variable
+    characterTable.__nth = 0
+
+    mod.vars()[self.tree.character] = characterTable
+end
+
+function DialogMenu:show(options, renderOptions, inputOptions)
+    self:setOptions(options)
+
     -- Increase the $__nth variable
     mod.vars(self.tree.character).__nth = mod.vars(self.tree.character).__nth + 1
 
@@ -44,8 +63,8 @@ function DialogMenu:show(options)
     end
 
     -- Activate renderer and input handler
-    self.renderer:show(options and options.rendererOptions)
-    self.inputHandler:enable(self, options and options.inputHandlerOptions)
+    self.renderer:show(renderOptions)
+    self.inputHandler:enable(self, inputOptions)
 
     -- Go to the initial dialog state
     self:setDialogState(start)
@@ -59,9 +78,11 @@ function DialogMenu:hide()
     self.inputHandler:disable()
 
     -- Call dialog end callback if present
-    if self.events and self.events.onDialogEnd then
-        self.events.onDialogEnd()
+    if self.options.events.onDialogEnd then
+        self.options.events.onDialogEnd()
     end
+
+    self:setOptions()
 end
 
 function DialogMenu:selectResponse(idx)
@@ -128,12 +149,14 @@ function DialogMenu:resolveDialogKey(key)
 end
 
 function DialogMenu:setDialogState(key)
+    local tree
     tree, key = self:resolveDialogKey(key)
 
     -- Update dialog state
     self.tree = tree
     self.dialogState = self.tree:getDialogState(key)
 
+    -- Check for invalid or terminal state
     if not self.dialogState then
         return self:hide()
     elseif self.dialogState.isTerminal then
