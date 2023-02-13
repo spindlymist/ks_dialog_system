@@ -7,7 +7,7 @@ local DefaultRenderer = {
         textColor = {192, 192, 192},
         activeTextColor = {255, 255, 255},
         background = mod.GraphicsPath.."Background.png",
-        transparency = 32,
+        backgroundTransparency = 32,
         cursors = {},
     }
 }
@@ -76,11 +76,18 @@ function DefaultRenderer:show()
     end
 
     -- Show background
-    self.bgObject = Objects.NewTemplate(0, 0, 8)
-    self.bgObject:LoadFrame(self.options.background)
-    self.bgObject:SetX(self.leftSide + 100)
-    self.bgObject:SetY(120)
-    self.bgObject:SetTransparency(self.options.transparency)
+    self.backgroundObject = Objects.NewTemplate(0, 0, 8)
+    if type(self.options.background) == "table" then
+        self.backgroundObject:LoadFrame(self.Defaults.background)
+        self.backgroundObject:ReplaceColor(0, 0, 0,
+            self.options.background[1], self.options.background[2], self.options.background[3]
+        )
+    else
+        self.backgroundObject:LoadFrame(self.options.background)
+    end
+    self.backgroundObject:SetX(self.leftSide + 100)
+    self.backgroundObject:SetY(120)
+    self.backgroundObject:SetTransparency(self.options.backgroundTransparency)
 
     -- Create cursors
     for class, options in pairs(self.options.cursors) do
@@ -98,7 +105,7 @@ end
 
 function DefaultRenderer:hide()
     self:hideSign()
-    self.bgObject = self.bgObject:Destroy()
+    self.backgroundObject = self.backgroundObject:Destroy()
 
     for _, text in ipairs(self.textObjects) do
         text:Destroy()

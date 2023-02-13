@@ -96,7 +96,7 @@ local function normalizeOptions(options, parent)
     end
 
     -- Render options
-    local renderKeys = { "sign", "dock", "textColor", "activeTextColor" }
+    local renderKeys = { "sign", "dock", "textColor", "activeTextColor", "background", "backgroundTransparency" }
     local renderOptions = inheritKeys(options, {}, renderKeys)
     inheritKeys(parent.render, renderOptions, renderKeys)
 
