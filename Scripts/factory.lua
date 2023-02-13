@@ -96,16 +96,26 @@ local function normalizeOptions(options, parent)
     end
 
     -- Render options
-    local renderKeys = { "sign", "dock", "textColor", "activeTextColor", "background", "backgroundTransparency" }
-    local renderOptions = inheritKeys(options, {}, renderKeys)
-    inheritKeys(parent.render, renderOptions, renderKeys)
+    local renderOptions
+    if not options.renderer then
+        local renderKeys = { "sign", "dock", "textColor", "activeTextColor", "background", "backgroundTransparency" }
+        renderOptions = inheritKeys(options, {}, renderKeys)
+        inheritKeys(parent.render, renderOptions, renderKeys)
 
-    renderOptions.cursors = normalizeCursors(options, parent.render.cursors)
+        renderOptions.cursors = normalizeCursors(options, parent.render.cursors)
+    else
+        renderOptions = options.render or {}
+    end
 
     -- Input options
-    local inputKeys = { "keys" }
-    local inputOptions = inheritKeys(options, {}, inputKeys)
-    inheritKeys(parent.input, inputOptions, inputKeys)
+    local inputOptions
+    if not options.inputHandler then
+        local inputKeys = { "keys" }
+        inputOptions = inheritKeys(options, {}, inputKeys)
+        inheritKeys(parent.input, inputOptions, inputKeys)
+    else
+        inputOptions = options.input or {}
+    end
 
     -- Menu options
     local menuKeys = { "events" }
