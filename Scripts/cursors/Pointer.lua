@@ -7,7 +7,7 @@ local Pointer = {
         image = mod.GraphicsPath.."Pointer.png",
         bobHeight = 3,
         bobTime = 60,
-        layer = 9,
+        layer = 10,
     }
 }
 Pointer.__index = Pointer
@@ -19,6 +19,13 @@ function Pointer:new(options)
     o.object = Objects.NewTemplate(0, 0, o.options.layer)
     o.object:LoadFrame(o.options.image)
     o.object:SetTransparency(127)
+
+    if options.color then
+        o.object:ReplaceColor(
+            255, 255, 255,
+            options.color[1], options.color[2], options.color[3]
+        )
+    end
 
     return o
 end

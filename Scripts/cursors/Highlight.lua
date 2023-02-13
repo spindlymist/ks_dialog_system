@@ -22,6 +22,13 @@ function Highlight:new(options)
     o.object = Objects.new(mod.TemplatesBank, o.Template, 0, 0, o.options.layer)
     o.object:SetTransparency(127)
 
+    if options.color then
+        o.object:ReplaceColor(
+            255, 255, 255,
+            options.color[1], options.color[2], options.color[3]
+        )
+    end
+
     o.y = 0
     o.height = 0
     o.targetY = 0
