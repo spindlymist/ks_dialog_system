@@ -5,6 +5,7 @@ local Tracer = {
         transparency = 0,
         side = "right",
         lag = 5,
+        layer = 9,
     }
 }
 Tracer.__index = Tracer
@@ -18,24 +19,24 @@ function Tracer:new(options)
         ReplaceGraphics({mod.GraphicsPath.."Tracer/Tracer", 0, 78}, mod.TemplatesBank, self.Template)
     end
 
+    o.object = Objects.new(mod.TemplatesBank, o.Template, 0, 0, o.options.layer)
+    o.object:SetTransparency(127)
+
     o.y = 0
     o.height = 0
     o.targetY = 0
     o.targetHeight = 0
+    o.skipAnim = true -- skip animation on first layout
 
     return o
 end
 
-function Tracer:show()
-    self.object = Objects.new(mod.TemplatesBank, self.Template, 0, 0, self.options.layer or 9)
-    self.object:SetTransparency(self.options.transparency)
-end
-
-function Tracer:hide()
+function Tracer:destroy()
     self.object = self.object:Destroy()
 end
 
 function Tracer:onLayout(layout)
+    self.object:SetTransparency(self.options.transparency)
     local offset = (self.options.side == "left" and 0) or 196
     self.object:SetX(layout.x + offset + 2)
     self.targetHeight = layout.lines * layout.lineHeight
@@ -43,8 +44,14 @@ function Tracer:onLayout(layout)
 end
 
 function Tracer:animate(tick, elapsed)
-    self.y = mod.anim.simpleInterpolate(self.y, self.targetY, elapsed, self.options.lag)
-    self.height = mod.anim.simpleInterpolate(self.height, self.targetHeight, elapsed, self.options.lag)
+    if self.skipAnim then
+        self.y = self.targetY
+        self.height = self.targetHeight
+        self.skipAnim = false
+    else
+        self.y = mod.anim.simpleInterpolate(self.y, self.targetY, elapsed, self.options.lag)
+        self.height = mod.anim.simpleInterpolate(self.height, self.targetHeight, elapsed, self.options.lag)
+    end
 
     self.object:SetY(self.y)
     self.object:SetAnimationFrame(self.height)

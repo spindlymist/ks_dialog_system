@@ -82,10 +82,9 @@ function DefaultRenderer:show()
     self.bgObject:SetY(120)
     self.bgObject:SetTransparency(self.options.transparency)
 
-    -- Show cursors
+    -- Create cursors
     for class, options in pairs(self.options.cursors) do
         local cursor = class:new(options)
-        cursor:show()
         self.cursors[#self.cursors+1] = cursor
     end
 
@@ -107,7 +106,7 @@ function DefaultRenderer:hide()
     self.textObjects = {}
 
     for _, cursor in pairs(self.cursors) do
-        cursor:hide()
+        cursor:destroy()
     end
     self.cursors = {}
 
@@ -150,15 +149,6 @@ function DefaultRenderer:updateResponses(responses)
         self.textObjects[i] = text
         y = y + responseHeight
     end
-
-    -- Update layout data (for cursors)
-    local _, lineHeight = self.textObjects[1]:GetCharacterSize()
-    self.layout = {
-        x = self.leftSide,
-        height = responseHeight,
-        width = 200,
-        lineHeight = lineHeight
-    }
 end
 
 function DefaultRenderer:selectResponse(prevIdx, idx)
@@ -174,19 +164,39 @@ function DefaultRenderer:selectResponse(prevIdx, idx)
         self.options.activeTextColor[1], self.options.activeTextColor[2], self.options.activeTextColor[3]
     )
 
-    -- Update cursors
-    self.layout.y = self.layout.height * (idx - 1)
-    self.layout.lines = math.max(self.textObjects[idx]:GetLinesCount() + 1, 4)
-    for _, cursor in pairs(self.cursors) do
-        cursor:onLayout(self.layout)
-    end
+    -- Layout cursors on next update
+    -- This can't be done on the first frame the menu is shown
+    -- because GetLinesCount() will always return 0.
+    self.selectedText = self.textObjects[idx]
 end
 
 -- end required interface ------------------------------------------------------
 
+function DefaultRenderer:layout()
+    local _, lineHeight = self.selectedText:GetCharacterSize()
+    local layout = {
+        x = self.leftSide,
+        y = self.selectedText:GetY(),
+        height = self.selectedText:GetHeight(),
+        width = 200,
+        lineHeight = lineHeight,
+        lines = math.max(self.selectedText:GetLinesCount() + 1, 4),
+    }
+
+    for _, cursor in pairs(self.cursors) do
+        cursor:onLayout(layout)
+    end
+
+    self.selectedText = nil
+end
+
 function DefaultRenderer:update(tick)
     local elapsed = tick - (self.last_tick or tick)
     self.last_tick = tick
+
+    if self.selectedText then
+        self:layout()
+    end
 
     for _, cursor in pairs(self.cursors) do
         cursor:animate(tick, elapsed)

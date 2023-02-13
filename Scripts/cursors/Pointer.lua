@@ -6,7 +6,8 @@ local Pointer = {
         leftMargin = 15,
         image = mod.GraphicsPath.."Pointer.png",
         bobHeight = 3,
-        bobTime = 60
+        bobTime = 60,
+        layer = 9,
     }
 }
 Pointer.__index = Pointer
@@ -15,16 +16,14 @@ function Pointer:new(options)
     options = setmetatable(options or {}, { __index = self.Defaults })
     local o = setmetatable({ options = options }, self)
 
+    o.object = Objects.NewTemplate(0, 0, o.options.layer)
+    o.object:LoadFrame(o.options.image)
+    o.object:SetTransparency(127)
+
     return o
 end
 
-function Pointer:show()
-    self.object = Objects.NewTemplate(0, 0, self.options.layer or 9)
-    self.object:LoadFrame(self.options.image)
-    self.object:SetTransparency(self.options.transparency)
-end
-
-function Pointer:hide()
+function Pointer:destroy()
     self.object = self.object:Destroy()
 end
 

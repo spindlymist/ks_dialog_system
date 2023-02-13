@@ -25,18 +25,16 @@ function Underline:new(options)
         ReplaceGraphics({mod.GraphicsPath.."Underline/Underline", 0, 200}, mod.TemplatesBank, self.Template)
     end
 
+    o.object = Objects.new(mod.TemplatesBank, o.Template, 0, 0, o.options.layer)
+    o.object:SetTransparency(127)
+
     o.width = 200 - options.leftMargin - options.rightMargin
     o.t = 0
 
     return o
 end
 
-function Underline:show()
-    self.object = Objects.new(mod.TemplatesBank, self.Template, 0, 0, self.options.layer)
-    self.object:SetTransparency(self.options.transparency)
-end
-
-function Underline:hide()
+function Underline:destroy()
     self.object = self.object:Destroy()
 end
 
@@ -44,6 +42,7 @@ function Underline:onLayout(layout)
     local y_center = layout.y + layout.height * 0.5
     local y_offset = (layout.lines * layout.lineHeight) / 2
 
+    self.object:SetTransparency(self.options.transparency)
     self.object:SetX(layout.x + self.options.leftMargin + 100)
     self.object:SetY(y_center + y_offset - 1)
     self.object:SetAnimationFrame(0)
