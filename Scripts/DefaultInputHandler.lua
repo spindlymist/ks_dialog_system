@@ -23,11 +23,10 @@ function DefaultInputHandler:enable(callbacks)
     self.callbacks = callbacks
 
     -- Disable player movement
-    EnableKeysInput(false)
+    self:disableInput()
 
     -- Initialize input state
     self:initKeyStates()
-    self.ignoreNextDown = self.keyStates.Next.isDown
 
     -- Start update timer
     self.updateWrapper = self.updateWrapper or function(tick) self:update(tick) end
@@ -40,15 +39,15 @@ function DefaultInputHandler:initKeyStates()
     local confIsDown = Controls.check(self.options.keys.Confirm)
 
     self.keyStates = {
-        Next    = { isDown = nextIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = true },
-        Prev    = { isDown = prevIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = true },
-        Confirm = { isDown = confIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = true }
+        Next    = { isDown = nextIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = nextIsDown },
+        Prev    = { isDown = prevIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = prevIsDown },
+        Confirm = { isDown = confIsDown, wasReleased = false, wasPressed = false, ignoreNextRelease = confIsDown }
     }
 end
 
 function DefaultInputHandler:disable()
     RemoveTimer(self.updateWrapper)
-    EnableKeysInput(true)
+    self:enableInput()
 end
 
 function DefaultInputHandler:update(tick)
@@ -83,6 +82,21 @@ function DefaultInputHandler:updateKeyStates()
             state.ignoreNextRelease = false
         end
     end
+end
+
+function DefaultInputHandler:disableInput()
+    -- Register an event handler to reenable input if Juni dies while the menu is open
+    self.deathEvent = self.deathEvent or function(restart)
+        self:enableInput()
+    end
+    events.global.Death.Add(self.deathEvent)
+
+    EnableKeysInput(false)
+end
+
+function DefaultInputHandler:enableInput()
+    events.global.Death.Remove(self.deathEvent)
+    EnableKeysInput(true)
 end
 
 return DefaultInputHandler
