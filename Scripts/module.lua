@@ -17,7 +17,14 @@ return function(options)
     DialogSystem = mod
 
     mod.vars = function(character)
-        return (character and vars[VarsKey][character]) or vars[VarsKey]
+        vars[VarsKey] = vars[VarsKey] or {}
+
+        if character then
+            vars[VarsKey][character] = vars[VarsKey][character] or {}
+            return vars[VarsKey][character]
+        else
+            return vars[VarsKey]
+        end
     end
 
     -- Utilities ---------------------------------------------------------------

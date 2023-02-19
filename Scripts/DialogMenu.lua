@@ -29,7 +29,7 @@ end
 
 function DialogMenu:initCharacterTable(initValues)
     -- Create character table if necessary
-    local characterTable = mod.vars(self.tree.character) or {}
+    local characterTable = mod.vars(self.tree.character)
 
     -- Initialize undefined keys
     initValues = initValues or {}
