@@ -6,6 +6,8 @@ local Tracer = {
         side = "right",
         lag = 5,
         layer = 10,
+        paddingY = 6,
+        minHeight = 51,
     }
 }
 Tracer.__index = Tracer
@@ -46,7 +48,10 @@ function Tracer:onLayout(layout)
     self.object:SetTransparency(self.options.transparency)
     local offset = (self.options.side == "left" and 0) or 196
     self.object:SetX(layout.x + offset + 2)
-    self.targetHeight = layout.lines * layout.lineHeight
+    self.targetHeight = math.max(
+        self.options.minHeight,
+        layout.lines * layout.lineHeight + self.options.paddingY * 2
+    )
     self.targetY = layout.y + layout.height * 0.5
 end
 

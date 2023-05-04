@@ -4,6 +4,8 @@ local Highlight = {
     Defaults = {
         transparency = 117,
         leftMargin = 30,
+        paddingY = 6,
+        minHeight = 51,
         lag = 5,
         layer = 9,
     }
@@ -45,7 +47,10 @@ end
 function Highlight:onLayout(layout)
     self.object:SetTransparency(self.options.transparency)
     self.object:SetX(layout.x + 100)
-    self.targetHeight = math.min(layout.lines * layout.lineHeight, 78)
+    self.targetHeight = math.max(
+        self.options.minHeight,
+        layout.lines * layout.lineHeight + self.options.paddingY * 2
+    )
     self.targetY = layout.y + layout.height * 0.5
 end
 

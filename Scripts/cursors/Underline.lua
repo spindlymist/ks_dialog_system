@@ -5,6 +5,8 @@ local Underline = {
         transparency = 0,
         leftMargin = 30,
         rightMargin = 30,
+        paddingY = 6,
+        minHeight = 51,
         animTime = 20,
         animCurve = mod.anim.Bezier:new{
             { x = 0.0, y = 0.0 },
@@ -47,7 +49,11 @@ end
 
 function Underline:onLayout(layout)
     local y_center = layout.y + layout.height * 0.5
-    local y_offset = (layout.lines * layout.lineHeight) / 2
+    local text_height = math.max(
+        self.options.minHeight,
+        layout.lines * layout.lineHeight + self.options.paddingY * 2
+    )
+    local y_offset = math.ceil(text_height / 2)
 
     self.object:SetTransparency(self.options.transparency)
     self.object:SetX(layout.x + self.options.leftMargin + 100)

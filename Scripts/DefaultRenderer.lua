@@ -187,7 +187,7 @@ function DefaultRenderer:layout()
         height = self.selectedText:GetHeight(),
         width = 200,
         lineHeight = lineHeight,
-        lines = math.max(self.selectedText:GetLinesCount() + 1, 4),
+        lines = self.selectedText:GetLinesCount(),
     }
 
     for _, cursor in pairs(self.cursors) do
