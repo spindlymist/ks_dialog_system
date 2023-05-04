@@ -64,12 +64,12 @@ function DialogTree:new(o)
     -- Load dialog tree from file
     local data = dofile(mod.TreesPath .. o.name .. ".lua")
 
-    o.character = data.__meta.character
-    o.init = data.__meta.init
-    o.start = data.__meta.start
-    o.passive = data.__meta.passive
+    o.character = data._meta.character
+    o.init = data._meta.init
+    o.start = data._meta.start
+    o.passive = data._meta.passive
 
-    data.__meta = nil
+    data._meta = nil
     o.states = data
 
     return o
@@ -83,11 +83,11 @@ function DialogTree:getStartKey()
     -- Find the initial dialog state
     local key = self:match(self.start)
 
-    -- Default to "__start" if this is the first time
+    -- Default to "start" if this is the first time
     -- There is no default if the character has already been spoken to
-    -- The dialog writer must include their own logic using $__nth
-    if key == nil and self.states.__start and mod.vars(self.character).__nth == 1 then
-        return "__start"
+    -- The dialog writer must include their own logic using $_nth
+    if key == nil and self.states.start and mod.vars(self.character)._nth == 1 then
+        return "start"
     end
 
     return key

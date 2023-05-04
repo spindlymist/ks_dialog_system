@@ -37,8 +37,8 @@ function DialogMenu:initCharacterTable(initValues)
         characterTable[key] = characterTable[key] or value
     end
 
-    -- Reset the $__nth variable
-    characterTable.__nth = 0
+    -- Reset the $_nth variable
+    characterTable._nth = 0
 
     mod.vars()[self.tree.character] = characterTable
 end
@@ -46,8 +46,8 @@ end
 function DialogMenu:show(onDialogEnd)
     self.onDialogEnd = onDialogEnd
 
-    -- Increase the $__nth variable
-    mod.vars(self.tree.character).__nth = mod.vars(self.tree.character).__nth + 1
+    -- Increase the $_nth variable
+    mod.vars(self.tree.character)._nth = mod.vars(self.tree.character)._nth + 1
 
     -- Determine starting state (abort if absent)
     local start = self.tree:getStartKey()
