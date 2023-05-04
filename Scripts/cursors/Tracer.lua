@@ -19,7 +19,7 @@ function Tracer:new(options)
         ReplaceGraphics({mod.GraphicsPath.."Tracer/Tracer", 0, 78}, mod.TemplatesBank, self.Template)
     end
 
-    o.object = Objects.new(mod.TemplatesBank, o.Template, 0, 0, o.options.layer)
+    o.object = Objects.new(mod.TemplatesBank, self.Template, 0, 0, o.options.layer)
     o.object:SetTransparency(127)
 
     if options.color then
